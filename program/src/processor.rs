@@ -29,7 +29,7 @@ use {
     },
 };
 
-fn initialize_account4(
+fn initialize_account_with_close_authority(
     token_program_id: &Pubkey,
     account_pubkey: &Pubkey,
     mint_pubkey: &Pubkey,
@@ -37,8 +37,8 @@ fn initialize_account4(
     close_authority_pubkey: &Pubkey,
 ) -> Result<Instruction, ProgramError> {
     check_spl_token_program_account(token_program_id)?;
-    let mut data = Vec::with_capacity(128);
-    data.push(25);
+    let mut data = Vec::with_capacity(65);
+    data.push(128);
     data.extend_from_slice(owner_pubkey.as_ref());
     data.extend_from_slice(close_authority_pubkey.as_ref());
 
@@ -176,7 +176,7 @@ fn process_create_associated_token_account(
     )?;
 
     invoke(
-        &initialize_account4(
+        &initialize_account_with_close_authority(
             spl_token_program_id,
             associated_token_account_info.key,
             spl_token_mint_info.key,
