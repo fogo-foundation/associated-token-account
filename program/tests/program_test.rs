@@ -6,6 +6,7 @@ use {
 #[allow(dead_code)]
 pub fn program_test(token_mint_address: Pubkey) -> ProgramTest {
     let mut pc = ProgramTest::new("spl_associated_token_account", id(), None);
+    pc.add_program("spl_token", spl_token_interface::id(), None);
 
     // Add a token mint account
     //

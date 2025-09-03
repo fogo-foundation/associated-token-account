@@ -180,17 +180,36 @@ async fn check_same_mint(context: &mut ProgramTestContext, program_id: &Pubkey) 
         .get_new_latest_blockhash(&context.last_blockhash)
         .await
         .unwrap();
-    let transaction = Transaction::new_signed_with_payer(
-        &[instruction::recover_nested(
-            &wallet.pubkey(),
-            &mint,
-            &mint,
-            program_id,
-        )],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, &wallet],
-        context.last_blockhash,
-    );
+    let transaction = if program_id == &spl_token_interface::id() {
+        Transaction::new_signed_with_payer(
+            &[
+                instruction::recover_nested(&wallet.pubkey(), &mint, &mint, program_id),
+                spl_token_2022_interface::instruction::close_account(
+                    program_id,
+                    &nested_associated_token_address,
+                    &wallet.pubkey(),
+                    &context.payer.pubkey(),
+                    &[],
+                )
+                .unwrap(),
+            ],
+            Some(&context.payer.pubkey()),
+            &[&context.payer, &wallet],
+            context.last_blockhash,
+        )
+    } else {
+        Transaction::new_signed_with_payer(
+            &[instruction::recover_nested(
+                &wallet.pubkey(),
+                &mint,
+                &mint,
+                program_id,
+            )],
+            Some(&context.payer.pubkey()),
+            &[&context.payer, &wallet],
+            context.last_blockhash,
+        )
+    };
     try_recover_nested(
         context,
         program_id,
@@ -243,17 +262,41 @@ async fn check_different_mints(context: &mut ProgramTestContext, program_id: &Pu
         .get_new_latest_blockhash(&context.last_blockhash)
         .await
         .unwrap();
-    let transaction = Transaction::new_signed_with_payer(
-        &[instruction::recover_nested(
-            &wallet.pubkey(),
-            &owner_mint,
-            &nested_mint,
-            program_id,
-        )],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, &wallet],
-        context.last_blockhash,
-    );
+    let transaction = if program_id == &spl_token_interface::id() {
+        Transaction::new_signed_with_payer(
+            &[
+                instruction::recover_nested(
+                    &wallet.pubkey(),
+                    &owner_mint,
+                    &nested_mint,
+                    program_id,
+                ),
+                spl_token_2022_interface::instruction::close_account(
+                    program_id,
+                    &nested_associated_token_address,
+                    &wallet.pubkey(),
+                    &context.payer.pubkey(),
+                    &[],
+                )
+                .unwrap(),
+            ],
+            Some(&context.payer.pubkey()),
+            &[&context.payer, &wallet],
+            context.last_blockhash,
+        )
+    } else {
+        Transaction::new_signed_with_payer(
+            &[instruction::recover_nested(
+                &wallet.pubkey(),
+                &owner_mint,
+                &nested_mint,
+                program_id,
+            )],
+            Some(&context.payer.pubkey()),
+            &[&context.payer, &wallet],
+            context.last_blockhash,
+        )
+    };
     try_recover_nested(
         context,
         program_id,

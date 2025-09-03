@@ -175,21 +175,38 @@ fn process_create_associated_token_account(
         ],
     )?;
 
-    invoke(
-        &initialize_account_with_close_authority(
-            spl_token_program_id,
-            associated_token_account_info.key,
-            spl_token_mint_info.key,
-            wallet_account_info.key,
-            funder_info.key,
-        )?,
-        &[
-            associated_token_account_info.clone(),
-            spl_token_mint_info.clone(),
-            wallet_account_info.clone(),
-            spl_token_program_info.clone(),
-        ],
-    )
+    if spl_token_program_id == &spl_token_interface::id() {
+        invoke(
+            &initialize_account_with_close_authority(
+                spl_token_program_id,
+                associated_token_account_info.key,
+                spl_token_mint_info.key,
+                wallet_account_info.key,
+                funder_info.key,
+            )?,
+            &[
+                associated_token_account_info.clone(),
+                spl_token_mint_info.clone(),
+                wallet_account_info.clone(),
+                spl_token_program_info.clone(),
+            ],
+        )
+    } else {
+        invoke(
+            &spl_token_2022_interface::instruction::initialize_account3(
+                spl_token_program_id,
+                associated_token_account_info.key,
+                spl_token_mint_info.key,
+                wallet_account_info.key,
+            )?,
+            &[
+                associated_token_account_info.clone(),
+                spl_token_mint_info.clone(),
+                wallet_account_info.clone(),
+                spl_token_program_info.clone(),
+            ],
+        )
+    }
 }
 
 /// Processes `RecoverNested` instruction
@@ -320,21 +337,24 @@ pub fn process_recover_nested(program_id: &Pubkey, accounts: &[AccountInfo]) -> 
         &[owner_associated_token_account_signer_seeds],
     )?;
 
-    // Close the nested account so it's never used again
-    invoke_signed(
-        &spl_token_2022_interface::instruction::close_account(
-            spl_token_program_id,
-            nested_associated_token_account_info.key,
-            wallet_account_info.key,
-            owner_associated_token_account_info.key,
-            &[],
-        )?,
-        &[
-            nested_associated_token_account_info.clone(),
-            wallet_account_info.clone(),
-            owner_associated_token_account_info.clone(),
-            spl_token_program_info.clone(),
-        ],
-        &[owner_associated_token_account_signer_seeds],
-    )
+    if spl_token_program_id != &spl_token_interface::id() {
+        // Close the nested account so it's never used again
+        invoke_signed(
+            &spl_token_2022_interface::instruction::close_account(
+                spl_token_program_id,
+                nested_associated_token_account_info.key,
+                wallet_account_info.key,
+                owner_associated_token_account_info.key,
+                &[],
+            )?,
+            &[
+                nested_associated_token_account_info.clone(),
+                wallet_account_info.clone(),
+                owner_associated_token_account_info.clone(),
+                spl_token_program_info.clone(),
+            ],
+            &[owner_associated_token_account_signer_seeds],
+        )?;
+    }
+    Ok(())
 }
